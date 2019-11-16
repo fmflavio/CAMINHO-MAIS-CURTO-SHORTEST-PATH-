@@ -1,0 +1,2 @@
+# Caminho de Custo Minimo
+ DIJKSTRA BELLMAN-FORD FLOYD-WARSHALL
