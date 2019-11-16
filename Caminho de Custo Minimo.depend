@@ -1,0 +1,7 @@
+# depslib dependency file v1.0
+1573857409 source:d:\dropbox\pos graduações\doutorado em computação - uff\disiplinas\asa - luis kowada\trabalho de asa\caminho de custo minimo\main.cpp
+	<stdlib.h>
+	<stdio.h>
+	<limits.h>
+	<time.h>
+
