@@ -174,7 +174,7 @@ void print_distances(int **distances, unsigned int order){
         for (j = 0; j < order; j++) {
             printf("%u: %d\n", j, distances[i][j]);
         }
-        putchar('\n');
+        //putchar('\n');
         break;
     }
 }
@@ -187,95 +187,63 @@ int main(void){
     const unsigned int size = 9; /* Edges */
     const unsigned int order = 6; /* Vertices */
     weighted_edge *edges = (weighted_edge*) malloc(size * sizeof(weighted_edge));
+    weighted_arc *arcs = (weighted_arc*) malloc(size * sizeof(weighted_arc));
+    weighted_arc *arcs_floyd = (weighted_arc*) malloc(size * sizeof(weighted_arc));
     unsigned int *distances;
-    unsigned int i = 0;
-
+    int *distances_bellman, **distances_floyd;
+    unsigned int i,j=0,a=0,b=0,c=0;
+    //dados do grafo
+    int vet[3*size] = {0, 1, 2,
+                       0, 2, 4,
+                       1, 2, 1,
+                       1, 3, 4,
+                       1, 4, 2,
+                       2, 4, 3,
+                       3, 4, 3,
+                       3, 5, 2,
+                       4, 5, 2,};
+    while(j<3*size){ //preenchendo os grafos
+        weighted_edge_connect(edges, vet[j], vet[j+1], vet[j+2], &a);
+        weighted_arc_connect(arcs, vet[j], vet[j+1], vet[j+2], &b);
+        weighted_arc_connect_floyd(arcs_floyd, vet[j], vet[j+1], vet[j+2], &c);
+        j=j+3;
+    }
     //DIJKSTRA
-    weighted_edge_connect(edges, 0, 1, 2, &i);
-    weighted_edge_connect(edges, 0, 2, 4, &i);
-    weighted_edge_connect(edges, 1, 2, 1, &i);
-    weighted_edge_connect(edges, 1, 3, 4, &i);
-    weighted_edge_connect(edges, 1, 4, 2, &i);
-    weighted_edge_connect(edges, 2, 4, 3, &i);
-    weighted_edge_connect(edges, 3, 4, 3, &i);
-    weighted_edge_connect(edges, 3, 5, 2, &i);
-    weighted_edge_connect(edges, 4, 5, 2, &i);
-
     clock_t start = clock();
     distances = dijkstra(edges, size, order, 0);
     clock_t time = clock() - start;
 
     printf("\nDistancias DIJKSTRA:\n");
-    for (i = 0; i < order; i++) {
+    for (i = 0; i < order; i++)
         printf("%u: %u\n", i, distances[i]);
-    }
     printf("Tempo gasto pelo DIJKSTRA = %f segundos.\n",static_cast<float>(time) / CLOCKS_PER_SEC);
 
-    free(distances);
-    free(edges);
-
     //BELLMAN-FORD
-    i = 0;
-    int *distances_bellman;
-
-    weighted_arc *arcs = (weighted_arc*) malloc(size * sizeof(weighted_arc));
-
-    weighted_arc_connect(arcs, 0, 1, 2, &i);
-    weighted_arc_connect(arcs, 0, 2, 4, &i);
-    weighted_arc_connect(arcs, 1, 2, 1, &i);
-    weighted_arc_connect(arcs, 1, 3, 4, &i);
-    weighted_arc_connect(arcs, 1, 4, 2, &i);
-    weighted_arc_connect(arcs, 2, 4, 3, &i);
-    weighted_arc_connect(arcs, 3, 4, 3, &i);
-    weighted_arc_connect(arcs, 3, 5, 2, &i);
-    weighted_arc_connect(arcs, 4, 5, 2, &i);
-
     start = clock();
     distances_bellman = bellman_ford(arcs, size, order, 0);
     time = clock() - start;
 
-    if (distances_bellman == NULL) {
-        printf("Graph contains a negative cycle or ran out of memory.\n");
-        return 1;
-    }
-
     printf("\nDistancias BELLMAN-FORD:\n");
-    for (i = 0; i < order; i++) {
+    for (i = 0; i < order; i++)
         printf("%u: %d\n", i, distances_bellman[i]);
-    }
     printf("Tempo gasto pelo BELLMAN-FORD = %f segundos.\n",static_cast<float>(time) / CLOCKS_PER_SEC);
 
-    free(arcs);
-    free(distances_bellman);
-
     //FLOYD-WARSHALL
-    i = 0;
-    int **distances_floyd;
-    weighted_arc *arcs_floyd = (weighted_arc*) malloc(size * sizeof(weighted_arc));
-
-    weighted_arc_connect_floyd(arcs_floyd, 0, 1, 2, &i);
-    weighted_arc_connect_floyd(arcs_floyd, 0, 2, 4, &i);
-    weighted_arc_connect_floyd(arcs_floyd, 1, 2, 1, &i);
-    weighted_arc_connect_floyd(arcs_floyd, 1, 3, 4, &i);
-    weighted_arc_connect_floyd(arcs_floyd, 1, 4, 2, &i);
-    weighted_arc_connect_floyd(arcs_floyd, 2, 4, 3, &i);
-    weighted_arc_connect_floyd(arcs_floyd, 3, 4, 3, &i);
-    weighted_arc_connect_floyd(arcs_floyd, 3, 5, 2, &i);
-    weighted_arc_connect_floyd(arcs_floyd, 4, 5, 2, &i);
-
     start = clock();
     distances_floyd = floyd_warshall(arcs_floyd, size, order);
     time = clock() - start;
 
     printf("\nDistancias FLOYD-WARSHALL:\n");
     print_distances(distances_floyd, order);
-
-    free(arcs_floyd);
-    for (i = 0; i < order; i++) {
-        free(distances_floyd[i]);
-    }
     printf("Tempo gasto pelo FLOYD-WARSHALL = %f segundos.\n",static_cast<float>(time) / CLOCKS_PER_SEC);
 
+    free(distances);
+    free(edges);
+    free(arcs);
+    free(distances_bellman);
+    free(arcs_floyd);
+    for (i = 0; i < order; i++)
+        free(distances_floyd[i]);
     free(distances_floyd);
 
     return 0;
