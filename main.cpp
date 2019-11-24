@@ -179,86 +179,102 @@ void print_distances(int **distances, unsigned int order){
     }
 }
 
+int* geragrafo(int tamanho, int vertice, int limitepeso){
+    int *vet = (int*)malloc(sizeof(int)*(tamanho*3));
+    int j=0;
+    while(j<3*tamanho){
+        vet[j] = rand() % vertice; // aresta origem
+        vet[j+1] = rand() % vertice; // aresta destino
+        vet[j+2] = rand() % limitepeso; // peso
+        j=j+3;
+    }
+    return vet;
+}
+
 int main(void){
     printf("UFF - Pos-graduacao em Computacao\nAnalise e Sintese de Algoritmos - 2019-2.\n");
     printf("Professor Luis Antonio Brasil Kowada\nAluno Flavio Miranda de Farias\n");
     printf("Analise de metodos de algotritmos de maximinizacao e minimizacao custo.\n");
 
-    const unsigned int size = 9; /* Edges */
-    const unsigned int order = 6; /* Vertices */
-    weighted_edge *edges = (weighted_edge*) malloc(size * sizeof(weighted_edge));
-    weighted_arc *arcs = (weighted_arc*) malloc(size * sizeof(weighted_arc));
-    weighted_arc *arcs_floyd = (weighted_arc*) malloc(size * sizeof(weighted_arc));
-    unsigned int *distances;
-    int *distances_bellman, **distances_floyd;
-    unsigned int i,j=0,a=0,b=0,c=0;
-    //dados do grafo
-    int vet[3*size] = {0, 1, 2,
-                       0, 2, 4,
-                       1, 2, 1,
-                       1, 3, 4,
-                       1, 4, 2,
-                       2, 4, 3,
-                       3, 4, 3,
-                       3, 5, 2,
-                       4, 5, 2,};
-    while(j<3*size){ //preenchendo os grafos
-        weighted_edge_connect(edges, vet[j], vet[j+1], vet[j+2], &a);
-        weighted_arc_connect(arcs, vet[j], vet[j+1], vet[j+2], &b);
-        weighted_arc_connect_floyd(arcs_floyd, vet[j], vet[j+1], vet[j+2], &c);
-        j=j+3;
-    }
-    //DIJKSTRA
-    clock_t start = clock();
-    distances = dijkstra(edges, size, order, 0);
-    clock_t time = clock() - start;
+    //o valor de size determina o valor inicial no laço
+    unsigned int size = 4; /* vertices - padrão 9 */
+    const unsigned int order = size/3; /*padrão 6*/
+    const unsigned int limitePeso = 5; /* Limite de peso dos vertices - padrão 6*/
+    int cont=2;
+    FILE *file = fopen("dados.csv", "w");//cria um arquivo pra tabulção
+    fprintf(file, "VERTICES;DIJKSTRA;BELLMAN;FLOYD\n");
 
-    printf("\nDistancias DIJKSTRA:\n");
-    for (i = 0; i < order; i++)
-        printf("%u: %u\n", i, distances[i]);
-    printf("Tempo gasto pelo DIJKSTRA = %f segundos.\n",static_cast<float>(time) / CLOCKS_PER_SEC);
+    //o valor do size será incrementado exponencialmente ate o valor limite do laço
+    while(size <= 268435456){ //loop para repetição de teste (2^28)
+        weighted_edge *edges = (weighted_edge*) malloc(size * sizeof(weighted_edge));
+        weighted_arc *arcs = (weighted_arc*) malloc(size * sizeof(weighted_arc));
+        weighted_arc *arcs_floyd = (weighted_arc*) malloc(size * sizeof(weighted_arc));
+        unsigned int *distances;
+        int *distances_bellman, **distances_floyd;
+        unsigned int i,j=0,a=0,b=0,c=0;
+        float td=0,tf=0,tb=0;
+        int *vet = geragrafo(size, order, limitePeso);//gerando o grafo aleatorio
+        printf("\nPara Grafo de %d Vertices = 2^%d\n",size,cont);
+        //Entrada de dados do grafo
+        /*//dados usados no exemplo padrao
+        int vet[3*size] = {0, 1, 2,
+                           0, 2, 4,
+                           1, 2, 1,
+                           1, 3, 4,
+                           1, 4, 2,
+                           2, 4, 3,
+                           3, 4, 3,
+                           3, 5, 2,
+                           4, 5, 2,};
+        */
+        while(j<3*size){ //preenchendo os grafos
+            weighted_edge_connect(edges, vet[j], vet[j+1], vet[j+2], &a);
+            weighted_arc_connect(arcs, vet[j], vet[j+1], vet[j+2], &b);
+            weighted_arc_connect_floyd(arcs_floyd, vet[j], vet[j+1], vet[j+2], &c);
+            j=j+3;
+        }
+        //DIJKSTRA
+        clock_t start = clock();
+        distances = dijkstra(edges, size, order, 0);
+        clock_t time = clock() - start;
+        td = static_cast<float>(time) / CLOCKS_PER_SEC;
+        printf("\nDistancias DIJKSTRA:\n");
+        //for (i = 0; i < order; i++)
+            //printf("%u: %u\n", i, distances[i]);
+        printf("Tempo gasto pelo DIJKSTRA = %f segundos.\n",td);
 
-    //BELLMAN-FORD
-    start = clock();
-    distances_bellman = bellman_ford(arcs, size, order, 0);
-    time = clock() - start;
+        //BELLMAN-FORD
+        start = clock();
+        distances_bellman = bellman_ford(arcs, size, order, 0);
+        time = clock() - start;
+        tb = static_cast<float>(time) / CLOCKS_PER_SEC;
+        printf("\nDistancias BELLMAN-FORD:\n");
+        //for (i = 0; i < order; i++)
+            //printf("%u: %d\n", i, distances_bellman[i]);
+        printf("Tempo gasto pelo BELLMAN-FORD = %f segundos.\n",tb);
 
-    printf("\nDistancias BELLMAN-FORD:\n");
-    for (i = 0; i < order; i++)
-        printf("%u: %d\n", i, distances_bellman[i]);
-    printf("Tempo gasto pelo BELLMAN-FORD = %f segundos.\n",static_cast<float>(time) / CLOCKS_PER_SEC);
+        //FLOYD-WARSHALL
+        start = clock();
+        distances_floyd = floyd_warshall(arcs_floyd, size, order);
+        time = clock() - start;
+        tf = static_cast<float>(time) / CLOCKS_PER_SEC;
+        printf("\nDistancias FLOYD-WARSHALL:\n");
+        //print_distances(distances_floyd, order);
+        printf("Tempo gasto pelo FLOYD-WARSHALL = %f segundos.\n",tf);
 
-    //FLOYD-WARSHALL
-    start = clock();
-    distances_floyd = floyd_warshall(arcs_floyd, size, order);
-    time = clock() - start;
-
-    printf("\nDistancias FLOYD-WARSHALL:\n");
-    print_distances(distances_floyd, order);
-    printf("Tempo gasto pelo FLOYD-WARSHALL = %f segundos.\n",static_cast<float>(time) / CLOCKS_PER_SEC);
-
-    free(distances);
-    free(edges);
-    free(arcs);
-    free(distances_bellman);
-    free(arcs_floyd);
-    for (i = 0; i < order; i++)
-        free(distances_floyd[i]);
-    free(distances_floyd);
-
+        fprintf(file, "%d;%f;%f;%f\n", size, td, tb, tf);//escreve em arquivo
+        free(distances);
+        free(edges);
+        free(arcs);
+        free(distances_bellman);
+        free(arcs_floyd);
+        for (i = 0; i < order; i++)
+            free(distances_floyd[i]);
+        free(distances_floyd);
+        printf("-------------------------------------------------------\n");
+        size=size+size;
+        cont++;
+    }//fim loop
+    fclose(file);
     return 0;
 }
-/*
-digraph g{
-  rankdir=LR;
-  "0" -> "1" [dir=none color="black" label="2"]
-  "0" -> "2" [dir=none color="black" label="4"]
-  "1" -> "2" [dir=none color="black" label="1"]
-  "1" -> "3" [dir=none color="black" label="4"]
-  "1" -> "4" [dir=none color="black" label="2"]
-  "2" -> "4" [dir=none color="black" label="3"]
-  "3" -> "4" [dir=none color="black" label="3"]
-  "3" -> "5" [dir=none color="black" label="2"]
-  "4" -> "5" [dir=none color="black" label="2"]
-}
-*/
